@@ -33,9 +33,10 @@ netsert generate spine1:6030 --generators interfaces,bgp -k
 | Generator | Description |
 |-----------|-------------|
 | `interfaces` | Interface status, IP addresses, descriptions |
-| `bgp` | BGP neighbors, session state, AFI/SAFI |
+| `bgp` | BGP neighbors, session state, AFI/SAFI (including EVPN) |
 | `ospf` | OSPF neighbors and adjacency state |
 | `lldp` | LLDP neighbor relationships |
+| `vxlan` | VXLAN VTEP interfaces and VNI mappings |
 | `system` | Hostname, version, NTP servers |
 
 ## Generator Output
@@ -59,8 +60,11 @@ assertions:
 
 ### bgp
 
+The BGP generator detects all address families including EVPN:
+
 ```yaml
 assertions:
+  # Underlay BGP (IPv4)
   - name: BGP neighbor 10.0.0.2 session-state
     path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/state/session-state
     equals: "ESTABLISHED"
@@ -69,9 +73,22 @@ assertions:
     path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/config/peer-as
     equals: "65001"
 
-  - name: BGP neighbor 10.0.0.2 AFI-SAFI L2VPN_EVPN active
-    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/afi-safis/afi-safi[afi-safi-name=L2VPN_EVPN]/state/active
+  - name: BGP neighbor 10.0.0.2 IPV4_UNICAST active
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/afi-safis/afi-safi[afi-safi-name=IPV4_UNICAST]/state/active
     equals: "true"
+
+  # EVPN overlay
+  - name: EVPN peer 10.255.0.1 session-state
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/state/session-state
+    equals: "ESTABLISHED"
+
+  - name: EVPN peer 10.255.0.1 L2VPN_EVPN active
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/afi-safis/afi-safi[afi-safi-name=L2VPN_EVPN]/state/active
+    equals: "true"
+
+  - name: EVPN peer 10.255.0.1 peer-group
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/config/peer-group
+    equals: "SPINE-EVPN"
 ```
 
 ### ospf
@@ -94,6 +111,29 @@ assertions:
   - name: LLDP Ethernet1 neighbor port-id
     path: lldp/interfaces/interface[name=Ethernet1]/neighbors/neighbor/state/port-id
     equals: "Ethernet1"
+```
+
+### vxlan
+
+The VXLAN generator creates assertions for VTEP interfaces and VNI mappings:
+
+```yaml
+assertions:
+  - name: Vxlan1 oper-status
+    path: interface[Vxlan1]/state/oper-status
+    equals: "UP"
+
+  - name: Vxlan1 source-interface
+    path: interface[Vxlan1]/config/source-interface
+    equals: "Loopback1"
+
+  - name: VNI 10010 mapped
+    path: interface[Vxlan1]/vxlan/config/vni-map[vni=10010]/vlan
+    equals: "10"
+
+  - name: VNI 10020 mapped
+    path: interface[Vxlan1]/vxlan/config/vni-map[vni=10020]/vlan
+    equals: "20"
 ```
 
 ### system

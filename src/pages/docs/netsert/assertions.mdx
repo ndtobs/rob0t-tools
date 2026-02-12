@@ -98,6 +98,48 @@ assertions:
     equals: "FULL"
 ```
 
+### EVPN/VXLAN
+
+Validate EVPN overlay peering and AFI-SAFI state:
+
+```yaml
+assertions:
+  # EVPN overlay session
+  - name: EVPN peer 10.255.0.1 established
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/state/session-state
+    equals: "ESTABLISHED"
+
+  # L2VPN_EVPN address family active
+  - name: EVPN peer 10.255.0.1 L2VPN_EVPN enabled
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/afi-safis/afi-safi[afi-safi-name=L2VPN_EVPN]/state/active
+    equals: "true"
+
+  # EVPN peer using correct peer group
+  - name: EVPN peer in SPINE-EVPN group
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/config/peer-group
+    equals: "SPINE-EVPN"
+
+  # eBGP multihop for loopback peering
+  - name: EVPN peer multihop enabled
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.255.0.1]/ebgp-multihop/config/enabled
+    equals: "true"
+```
+
+Validate VXLAN tunnel endpoints:
+
+```yaml
+assertions:
+  # VTEP interface exists
+  - name: Vxlan1 interface exists
+    path: interface[Vxlan1]/state/oper-status
+    equals: "UP"
+
+  # VTEP source interface
+  - name: VTEP source is Loopback1
+    path: interface[Vxlan1]/config/source-interface
+    equals: "Loopback1"
+```
+
 ### System Checks
 
 ```yaml

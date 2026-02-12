@@ -14,8 +14,8 @@ Exporters extract specific configuration domains from devices. Each produces a c
 
 | Exporter | Description |
 |----------|-------------|
-| `interfaces` | Interface config (IPs, descriptions, MTU, ethernet, LAG) |
-| `bgp` | BGP global, peer groups, neighbors, AFI/SAFI |
+| `interfaces` | Interface config (IPs, descriptions, MTU, ethernet, LAG, VXLAN) |
+| `bgp` | BGP global, peer groups, neighbors, AFI/SAFI (including EVPN) |
 | `ospf` | OSPF areas, interfaces, timers |
 | `system` | Hostname, domain, NTP, DNS, AAA/users, syslog |
 | `routing_policy` | Prefix-sets, community-sets, AS-path sets, policies |
@@ -73,6 +73,8 @@ interfaces:
 
 ### bgp.yaml
 
+Full BGP config including EVPN overlay peering:
+
 ```yaml
 bgp:
   global:
@@ -80,6 +82,7 @@ bgp:
     router_id: 10.255.0.1
 
   peer_groups:
+    # Underlay (IPv4 unicast)
     SPINE:
       peer_as: 65000
       timers:
@@ -91,6 +94,7 @@ bgp:
         - name: IPV4_UNICAST
           enabled: true
 
+    # EVPN overlay (L2VPN EVPN)
     SPINE-EVPN:
       peer_as: 65000
       transport:
@@ -100,14 +104,16 @@ bgp:
           enabled: true
 
   neighbors:
+    # Underlay peer
     10.0.0.1:
       peer_as: 65101
       peer_group: SPINE
-      description: "leaf1"
+      description: "spine1 underlay"
 
+    # EVPN overlay peer (loopback-to-loopback)
     10.255.0.1:
       peer_group: SPINE-EVPN
-      description: "leaf1 EVPN"
+      description: "spine1 EVPN"
       ebgp_multihop:
         enabled: true
         multihop_ttl: 2
