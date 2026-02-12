@@ -1,16 +1,99 @@
 ---
 layout: ../../../layouts/DocsLayout.astro
 title: Inventory
-description: Organize devices into groups with netmodel inventory files
+description: Use your existing Ansible inventory with netmodel
 section: netmodel
 currentPage: inventory
 ---
 
 # Inventory
 
-Inventory files organize devices into groups with shared defaults. Same format as netsert.
+netmodel works with your existing Ansible inventory. Export config from the same devices you manage with Ansible — no duplicate inventory to maintain.
 
-## Basic Structure
+## Ansible Inventory
+
+Point netmodel at your Ansible inventory directory:
+
+```bash
+netmodel export @spine -i ./inventory/ -o ./host_vars/ --structure ansible
+```
+
+This reads your Ansible inventory and exports directly to `host_vars/` — ready for Ansible to use.
+
+### Supported Structure
+
+```
+inventory/
+├── hosts.yaml           # or hosts.ini
+├── group_vars/
+│   ├── all.yaml
+│   └── spine.yaml
+└── host_vars/
+    ├── spine1.yaml      # netmodel adds files here
+    └── spine2.yaml
+```
+
+### hosts.yaml
+
+```yaml
+all:
+  children:
+    spine:
+      hosts:
+        spine1:
+          ansible_host: 10.0.0.1
+          gnmi_port: 6030
+        spine2:
+          ansible_host: 10.0.0.2
+          gnmi_port: 6030
+    leaf:
+      hosts:
+        leaf1:
+          ansible_host: 10.0.1.1
+        leaf2:
+          ansible_host: 10.0.1.2
+```
+
+### group_vars/all.yaml
+
+```yaml
+# Shared gNMI settings
+gnmi_port: 6030
+gnmi_username: admin
+gnmi_password: "{{ vault_gnmi_password }}"
+gnmi_insecure: true
+```
+
+netmodel maps these variables automatically:
+- `ansible_host` → target address
+- `gnmi_port` → target port (default: 6030)
+- `gnmi_username` / `gnmi_password` → credentials
+- `gnmi_insecure` → skip TLS verification
+
+## Workflow: Ansible + netmodel
+
+1. **Export current state** from live devices:
+   ```bash
+   netmodel export @all -i ./inventory/ -o ./host_vars/ --structure ansible
+   ```
+
+2. **Review the YAML** — this is your network as code
+
+3. **Modify as needed** — change configs in YAML
+
+4. **Apply with Ansible**:
+   ```bash
+   ansible-playbook -i inventory/ deploy.yaml
+   ```
+
+5. **Validate with netsert**:
+   ```bash
+   netsert run assertions.yaml -i ./inventory/
+   ```
+
+## Simple Inventory (Standalone)
+
+For standalone use or quick exports, use netmodel's simple YAML format:
 
 ```yaml
 # inventory.yaml
@@ -31,100 +114,37 @@ defaults:
   insecure: true
 ```
 
-## Usage
-
-Export a specific group:
+### Usage
 
 ```bash
+# Export a group
 netmodel export @spine -i inventory.yaml -o ./network-model/
-```
 
-Export all devices:
-
-```bash
+# Export all devices
 netmodel export @all -i inventory.yaml -o ./network-model/
 ```
 
-## Group References
+### Group References
 
-Use `@groupname` to build composite groups:
+Compose groups with `@groupname`:
 
 ```yaml
 groups:
-  dc1-spine:
+  dc1:
     - dc1-spine1:6030
     - dc1-spine2:6030
-  dc1-leaf:
     - dc1-leaf1:6030
-    - dc1-leaf2:6030
-  dc1:
-    - "@dc1-spine"
-    - "@dc1-leaf"
-    
-  dc2-spine:
+  dc2:
     - dc2-spine1:6030
     - dc2-spine2:6030
-  dc2-leaf:
-    - dc2-leaf1:6030
-    - dc2-leaf2:6030
-  dc2:
-    - "@dc2-spine"
-    - "@dc2-leaf"
-
   all:
     - "@dc1"
     - "@dc2"
 ```
 
-## Defaults
-
-```yaml
-defaults:
-  username: admin
-  password: admin
-  insecure: true
-  timeout: 30s
-```
-
-| Field | Description |
-|-------|-------------|
-| `username` | gNMI username |
-| `password` | gNMI password |
-| `insecure` | Skip TLS verification |
-| `timeout` | Connection timeout |
-
-## Output Per Group
-
-Export creates per-device directories:
-
-```bash
-netmodel export @spine -i inventory.yaml -o ./network-model/
-```
-
-```
-network-model/
-├── spine1/
-│   ├── metadata.yaml
-│   ├── interfaces.yaml
-│   └── ...
-└── spine2/
-    └── ...
-```
-
-With `--structure ansible`:
-
-```
-network-model/
-└── host_vars/
-    ├── spine1/
-    │   └── ...
-    └── spine2/
-        └── ...
-```
-
 ## Environment Variables
 
-Reference environment variables in inventory:
+Reference environment variables in either format:
 
 ```yaml
 defaults:
@@ -135,5 +155,14 @@ defaults:
 ```bash
 export NETWORK_USER=admin
 export NETWORK_PASS=secret
-netmodel export @all -i inventory.yaml -o ./network-model/
+netmodel export @all -i inventory.yaml -o ./output/
 ```
+
+## Which Format to Use?
+
+| Use Case | Recommended |
+|----------|-------------|
+| Already using Ansible | Use your existing Ansible inventory |
+| Bootstrapping new automation | Export with `--structure ansible`, then use that |
+| Quick one-off exports | Simple YAML or single target |
+| Multi-tool workflow | Ansible inventory (single source of truth) |
