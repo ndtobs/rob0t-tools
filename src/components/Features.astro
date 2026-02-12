@@ -22,7 +22,7 @@ import { Icon } from "astro-icon/components";
         <p class="text-gray-600 mb-4 flex-grow">
           Declarative network testing. Write what you expect, let netsert tell you what's wrong. CI/CD native.
         </p>
-        <pre class="text-xs bg-gray-900 text-green-400 px-4 py-3 rounded font-mono overflow-x-auto"><code>$ netsert run assertions.yaml
+        <pre class="text-xs bg-gray-900 text-green-400 px-4 py-3 rounded font-mono overflow-x-auto h-36"><code>$ netsert run assertions.yaml
 ✓ spine1: BGP neighbor 10.0.0.1 established
 ✓ spine1: Loopback0 has IP 10.255.0.1/32
 ✗ leaf1: Interface Ethernet1 is enabled
@@ -45,7 +45,7 @@ import { Icon } from "astro-icon/components";
         <p class="text-gray-600 mb-4 flex-grow">
           Export live network config to clean YAML. Feed it straight to Ansible. No more screen-scraping.
         </p>
-        <pre class="text-xs bg-gray-900 text-green-400 px-4 py-3 rounded font-mono overflow-x-auto"><code>$ netmodel export @spine -o ./host_vars/
+        <pre class="text-xs bg-gray-900 text-green-400 px-4 py-3 rounded font-mono overflow-x-auto h-36"><code>$ netmodel export @spine -o ./host_vars/
 Exporting spine1...
   → interfaces.yaml
   → bgp.yaml
