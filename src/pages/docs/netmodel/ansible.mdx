@@ -1,0 +1,127 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Ansible Integration
+description: Using netmodel output with Ansible
+section: netmodel
+currentPage: ansible
+---
+
+# Ansible Integration
+
+netmodel's `--structure ansible` option outputs directly to Ansible's expected directory structure.
+
+## Ansible Structure
+
+```bash
+netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible
+```
+
+Output:
+
+```
+network-model/
+├── group_vars/
+│   └── all.yaml          # Common config (v0.2+)
+└── host_vars/
+    ├── spine1/
+    │   ├── metadata.yaml
+    │   ├── interfaces.yaml
+    │   ├── bgp.yaml
+    │   ├── ospf.yaml
+    │   ├── system.yaml
+    │   └── routing_policy.yaml
+    ├── spine2/
+    │   └── ...
+    └── leaf1/
+        └── ...
+```
+
+## Using Variables
+
+Ansible automatically loads variables from `host_vars/<hostname>/`:
+
+```yaml
+# playbook.yaml
+- hosts: network
+  tasks:
+    - name: Show device hostname
+      debug:
+        msg: "{{ system.hostname }}"
+
+    - name: List interfaces
+      debug:
+        msg: "{{ interfaces | dict2items | map(attribute='key') | list }}"
+```
+
+## Example: Interface Configuration
+
+```yaml
+# playbook.yaml
+- hosts: arista
+  tasks:
+    - name: Configure interfaces
+      arista.eos.eos_l3_interfaces:
+        config: "{{ interfaces | dict2items | selectattr('value.ipv4', 'defined') | map(attribute='value') | list }}"
+        state: merged
+```
+
+## Example: BGP Configuration
+
+```yaml
+- hosts: arista
+  tasks:
+    - name: Configure BGP
+      arista.eos.eos_bgp_global:
+        config:
+          as_number: "{{ bgp.global.as }}"
+          router_id: "{{ bgp.global.router_id }}"
+```
+
+## Workflow
+
+1. **Export current state**:
+   ```bash
+   netmodel export @all -i inventory.yaml -o ./host_vars/ --structure ansible
+   ```
+
+2. **Review and modify** the YAML as needed
+
+3. **Apply with Ansible**:
+   ```bash
+   ansible-playbook -i inventory.ini deploy.yaml
+   ```
+
+4. **Validate with netsert**:
+   ```bash
+   netsert run assertions.yaml -i inventory.yaml
+   ```
+
+## Directory Layout
+
+A typical project structure:
+
+```
+network-automation/
+├── inventory.ini          # Ansible inventory
+├── inventory.yaml         # netsert/netmodel inventory
+├── group_vars/
+│   └── all.yaml
+├── host_vars/
+│   ├── spine1/
+│   │   └── ...
+│   └── spine2/
+│       └── ...
+├── playbooks/
+│   ├── deploy.yaml
+│   └── backup.yaml
+└── assertions/
+    ├── baseline.yaml
+    └── post-change.yaml
+```
+
+## Tips
+
+- Keep netmodel's `metadata.yaml` for tracking when configs were exported
+- Use `group_vars/all.yaml` for shared config (coming in v0.2)
+- Run netmodel periodically to detect drift
+- Pair with netsert for validation after Ansible runs

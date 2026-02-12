@@ -1,0 +1,233 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Exporters
+description: netmodel exporters and output format
+section: netmodel
+currentPage: exporters
+---
+
+# Exporters
+
+Exporters extract specific configuration domains from devices. Each produces a clean YAML file.
+
+## Available Exporters
+
+| Exporter | Description |
+|----------|-------------|
+| `interfaces` | Interface config (IPs, descriptions, MTU, ethernet, LAG) |
+| `bgp` | BGP global, peer groups, neighbors, AFI/SAFI |
+| `ospf` | OSPF areas, interfaces, timers |
+| `system` | Hostname, domain, NTP, DNS, AAA/users, syslog |
+| `routing_policy` | Prefix-sets, community-sets, AS-path sets, policies |
+
+List available exporters:
+
+```bash
+netmodel features
+```
+
+Export specific features:
+
+```bash
+netmodel export spine1:6030 --features interfaces,bgp -k
+```
+
+## Output Examples
+
+### interfaces.yaml
+
+```yaml
+interfaces:
+  Ethernet1:
+    description: "Uplink to leaf1"
+    enabled: true
+    mtu: 9214
+    type: ethernetCsmacd
+    ipv4:
+      addresses:
+        - ip: 10.0.0.0
+          prefix_length: 31
+    ethernet:
+      port_speed: SPEED_100GB
+      duplex_mode: FULL
+
+  Loopback0:
+    type: softwareLoopback
+    ipv4:
+      addresses:
+        - ip: 10.255.0.1
+          prefix_length: 32
+
+  Port-Channel1:
+    description: "MLAG peer-link"
+    type: ieee8023adLag
+    aggregation:
+      lag_type: LACP
+      min_links: 1
+
+  Ethernet49:
+    description: "Member of Po1"
+    ethernet:
+      aggregate_id: Port-Channel1
+```
+
+### bgp.yaml
+
+```yaml
+bgp:
+  global:
+    as: 65001
+    router_id: 10.255.0.1
+
+  peer_groups:
+    SPINE:
+      peer_as: 65000
+      timers:
+        hold_time: 9
+        keepalive_interval: 3
+      transport:
+        local_address: Loopback0
+      afi_safi:
+        - name: IPV4_UNICAST
+          enabled: true
+
+    SPINE-EVPN:
+      peer_as: 65000
+      transport:
+        local_address: Loopback0
+      afi_safi:
+        - name: L2VPN_EVPN
+          enabled: true
+
+  neighbors:
+    10.0.0.1:
+      peer_as: 65101
+      peer_group: SPINE
+      description: "leaf1"
+
+    10.255.0.1:
+      peer_group: SPINE-EVPN
+      description: "leaf1 EVPN"
+      ebgp_multihop:
+        enabled: true
+        multihop_ttl: 2
+```
+
+### ospf.yaml
+
+```yaml
+ospf:
+  router_id: 10.255.0.1
+  areas:
+    "0.0.0.0":
+      interfaces:
+        Ethernet1:
+          network_type: POINT_TO_POINT
+          passive: false
+          timers:
+            hello_interval: 10
+            dead_interval: 40
+        Loopback0:
+          passive: true
+```
+
+### system.yaml
+
+```yaml
+system:
+  hostname: spine1
+  domain_name: lab.local
+
+  dns:
+    servers:
+      - 8.8.8.8
+      - 8.8.4.4
+    search:
+      - lab.local
+
+  ntp:
+    enabled: true
+    servers:
+      10.0.0.100:
+        prefer: true
+      10.0.0.101:
+        prefer: false
+
+  aaa:
+    users:
+      admin:
+        role: network-admin
+        ssh_keys:
+          - "ssh-ed25519 AAAA... admin@workstation"
+      operator:
+        role: network-operator
+
+  logging:
+    console:
+      enabled: true
+      severity: warnings
+    remote:
+      - host: 10.0.0.50
+        port: 514
+        protocol: UDP
+        severity: informational
+```
+
+### routing_policy.yaml
+
+```yaml
+routing_policy:
+  prefix_sets:
+    LOOPBACKS:
+      prefixes:
+        - prefix: 10.255.0.0/24
+          mask_length_range: 32..32
+    
+    DEFAULT:
+      prefixes:
+        - prefix: 0.0.0.0/0
+          mask_length_range: exact
+
+  community_sets:
+    NO-EXPORT:
+      members:
+        - "65535:65281"
+
+  as_path_sets:
+    ORIGINATED:
+      members:
+        - "^$"
+
+  policy_definitions:
+    DENY-DEFAULT:
+      statements:
+        - name: "10"
+          conditions:
+            match_prefix_set: DEFAULT
+          actions:
+            policy_result: REJECT_ROUTE
+        - name: "99"
+          actions:
+            policy_result: ACCEPT_ROUTE
+```
+
+## Vendor Notes
+
+netmodel uses OpenConfig paths, but vendor support varies:
+
+| Feature | Arista | Cisco NX-OS | Juniper |
+|---------|--------|-------------|---------|
+| interfaces | ✓ | ✓ | ✓ |
+| bgp | ✓ | ✓ | ✓ |
+| ospf | Partial* | ✓ | ✓ |
+| system | ✓ | ✓ | ✓ |
+| routing_policy | ✓ | ✓ | ✓ |
+
+*Arista marks some OSPF interface state as not-supported in their OpenConfig deviations.
+
+## Tips
+
+- Export all features first, then filter with `--features` as needed
+- Check `metadata.yaml` for export timestamp and version
+- Empty sections are omitted from output
+- Use `--no-split` for a single YAML file per device

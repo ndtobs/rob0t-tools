@@ -1,0 +1,133 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Generators
+description: Auto-generate netsert assertions from live network state
+section: netsert
+currentPage: generators
+---
+
+# Generators
+
+Generators connect to live devices and create assertions based on current state. Use them to establish a baseline or bootstrap your assertion files.
+
+## Usage
+
+```bash
+netsert generate <target> [--generators <list>] [flags]
+```
+
+Generate all available assertions:
+
+```bash
+netsert generate spine1:6030 -u admin -P password -k
+```
+
+Generate specific types:
+
+```bash
+netsert generate spine1:6030 --generators interfaces,bgp -k
+```
+
+## Available Generators
+
+| Generator | Description |
+|-----------|-------------|
+| `interfaces` | Interface status, IP addresses, descriptions |
+| `bgp` | BGP neighbors, session state, AFI/SAFI |
+| `ospf` | OSPF neighbors and adjacency state |
+| `lldp` | LLDP neighbor relationships |
+| `system` | Hostname, version, NTP servers |
+
+## Generator Output
+
+### interfaces
+
+```yaml
+assertions:
+  - name: Ethernet1 oper-status
+    path: interface[Ethernet1]/state/oper-status
+    equals: "UP"
+
+  - name: Ethernet1 description
+    path: interface[Ethernet1]/config/description
+    equals: "Uplink to leaf1"
+
+  - name: Loopback0 IPv4 address
+    path: interface[Loopback0]/subinterfaces/subinterface[index=0]/ipv4/addresses/address[ip=10.255.0.1]/config/prefix-length
+    equals: "32"
+```
+
+### bgp
+
+```yaml
+assertions:
+  - name: BGP neighbor 10.0.0.2 session-state
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/state/session-state
+    equals: "ESTABLISHED"
+
+  - name: BGP neighbor 10.0.0.2 peer-as
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/config/peer-as
+    equals: "65001"
+
+  - name: BGP neighbor 10.0.0.2 AFI-SAFI L2VPN_EVPN active
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/afi-safis/afi-safi[afi-safi-name=L2VPN_EVPN]/state/active
+    equals: "true"
+```
+
+### ospf
+
+```yaml
+assertions:
+  - name: OSPF neighbor 10.255.0.2 adjacency-state
+    path: ospf[default]/areas/area[identifier=0.0.0.0]/interfaces/interface[id=Ethernet1]/neighbors/neighbor[router-id=10.255.0.2]/state/adjacency-state
+    equals: "FULL"
+```
+
+### lldp
+
+```yaml
+assertions:
+  - name: LLDP Ethernet1 neighbor system-name
+    path: lldp/interfaces/interface[name=Ethernet1]/neighbors/neighbor/state/system-name
+    equals: "leaf1"
+
+  - name: LLDP Ethernet1 neighbor port-id
+    path: lldp/interfaces/interface[name=Ethernet1]/neighbors/neighbor/state/port-id
+    equals: "Ethernet1"
+```
+
+### system
+
+```yaml
+assertions:
+  - name: System hostname
+    path: system/config/hostname
+    equals: "spine1"
+
+  - name: NTP server 10.0.0.100 configured
+    path: system/ntp/servers/server[address=10.0.0.100]/config/address
+    exists: true
+```
+
+## Workflow
+
+1. **Generate baseline** from known-good state:
+   ```bash
+   netsert generate spine1:6030 -k > baseline.yaml
+   ```
+
+2. **Review and edit** — remove transient values, add meaningful names
+
+3. **Run assertions** to validate:
+   ```bash
+   netsert run baseline.yaml -t spine1:6030 -k
+   ```
+
+4. **Integrate into CI/CD** — run on every change
+
+## Tips
+
+- Generate from a known-good state (maintenance window, post-change verification)
+- Edit generated assertions — add meaningful names, remove noise
+- Don't assert on counters or timestamps (they change)
+- Use `--generators` to limit scope when you only need specific checks

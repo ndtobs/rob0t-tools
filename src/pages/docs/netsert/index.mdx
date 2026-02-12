@@ -1,0 +1,101 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: netsert Overview
+description: Declarative network state testing via gNMI
+section: netsert
+currentPage: index
+---
+
+# netsert
+
+Declarative network state testing — validate live networks against YAML assertions via gNMI.
+
+## What it does
+
+Define what your network *should* look like as YAML assertions, then validate that state against live devices. Catch misconfigurations before they become outages.
+
+```
+YAML Assertions → netsert run → Live Network → Pass/Fail Results
+```
+
+## Installation
+
+```bash
+go install github.com/ndtobs/netsert/cmd/netsert@latest
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/ndtobs/netsert
+cd netsert
+go build -o netsert ./cmd/netsert
+```
+
+## Quick Start
+
+Run assertions against a device:
+
+```bash
+netsert run assertions.yaml --target spine1:6030 -u admin -P password -k
+```
+
+Generate assertions from live state:
+
+```bash
+netsert generate spine1:6030 -u admin -P password -k > baseline.yaml
+```
+
+Run against all devices in inventory:
+
+```bash
+netsert run assertions.yaml -i inventory.yaml
+```
+
+## Example Output
+
+```bash
+$ netsert run assertions.yaml
+
+✓ [PASS] Ethernet1 is UP @ spine1:6030
+✓ [PASS] BGP peer established @ spine1:6030
+
+Completed in 92ms
+  Total:  2
+  Passed: 2
+  Failed: 0
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `run` | Execute assertions against targets |
+| `generate` | Create assertions from device state |
+| `get` | Query a single gNMI path |
+| `validate` | Check assertion file syntax |
+
+## CLI Reference
+
+```
+netsert run <file> [flags]
+
+Flags:
+  -t, --target string      single target (host:port)
+  -i, --inventory string   inventory file for groups
+  -g, --group string       run against specific group
+  -u, --username string    gNMI username
+  -P, --password string    gNMI password
+  -k, --insecure           skip TLS verification
+  -w, --workers int        concurrent targets (default 10)
+  -p, --parallel int       concurrent assertions per target (default 5)
+  -o, --output string      output format: text, json (default text)
+      --timeout duration   gNMI timeout (default 30s)
+```
+
+## Next Steps
+
+- [Assertions](/docs/netsert/assertions/) — All assertion types and path syntax
+- [Generators](/docs/netsert/generators/) — Auto-generate assertions from live state
+- [Inventory](/docs/netsert/inventory/) — Organize devices into groups
+- [CI/CD](/docs/netsert/ci-cd/) — Integrate with your pipeline

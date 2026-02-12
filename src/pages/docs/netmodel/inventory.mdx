@@ -1,0 +1,139 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Inventory
+description: Organize devices into groups with netmodel inventory files
+section: netmodel
+currentPage: inventory
+---
+
+# Inventory
+
+Inventory files organize devices into groups with shared defaults. Same format as netsert.
+
+## Basic Structure
+
+```yaml
+# inventory.yaml
+groups:
+  spine:
+    - spine1:6030
+    - spine2:6030
+  leaf:
+    - leaf1:6030
+    - leaf2:6030
+  all:
+    - "@spine"
+    - "@leaf"
+
+defaults:
+  username: admin
+  password: admin
+  insecure: true
+```
+
+## Usage
+
+Export a specific group:
+
+```bash
+netmodel export @spine -i inventory.yaml -o ./network-model/
+```
+
+Export all devices:
+
+```bash
+netmodel export @all -i inventory.yaml -o ./network-model/
+```
+
+## Group References
+
+Use `@groupname` to build composite groups:
+
+```yaml
+groups:
+  dc1-spine:
+    - dc1-spine1:6030
+    - dc1-spine2:6030
+  dc1-leaf:
+    - dc1-leaf1:6030
+    - dc1-leaf2:6030
+  dc1:
+    - "@dc1-spine"
+    - "@dc1-leaf"
+    
+  dc2-spine:
+    - dc2-spine1:6030
+    - dc2-spine2:6030
+  dc2-leaf:
+    - dc2-leaf1:6030
+    - dc2-leaf2:6030
+  dc2:
+    - "@dc2-spine"
+    - "@dc2-leaf"
+
+  all:
+    - "@dc1"
+    - "@dc2"
+```
+
+## Defaults
+
+```yaml
+defaults:
+  username: admin
+  password: admin
+  insecure: true
+  timeout: 30s
+```
+
+| Field | Description |
+|-------|-------------|
+| `username` | gNMI username |
+| `password` | gNMI password |
+| `insecure` | Skip TLS verification |
+| `timeout` | Connection timeout |
+
+## Output Per Group
+
+Export creates per-device directories:
+
+```bash
+netmodel export @spine -i inventory.yaml -o ./network-model/
+```
+
+```
+network-model/
+├── spine1/
+│   ├── metadata.yaml
+│   ├── interfaces.yaml
+│   └── ...
+└── spine2/
+    └── ...
+```
+
+With `--structure ansible`:
+
+```
+network-model/
+└── host_vars/
+    ├── spine1/
+    │   └── ...
+    └── spine2/
+        └── ...
+```
+
+## Environment Variables
+
+Reference environment variables in inventory:
+
+```yaml
+defaults:
+  username: ${NETWORK_USER}
+  password: ${NETWORK_PASS}
+```
+
+```bash
+export NETWORK_USER=admin
+export NETWORK_PASS=secret
+netmodel export @all -i inventory.yaml -o ./network-model/
+```

@@ -1,0 +1,143 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Assertions
+description: netsert assertion types and path syntax
+section: netsert
+currentPage: assertions
+---
+
+# Assertions
+
+Assertions define what your network state should look like. Each assertion targets a gNMI path and validates the value.
+
+## Basic Structure
+
+```yaml
+targets:
+  - host: spine1:6030
+    assertions:
+      - name: Ethernet1 is UP
+        path: interface[Ethernet1]/state/oper-status
+        equals: "UP"
+
+      - name: BGP peer established
+        path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/state/session-state
+        equals: "ESTABLISHED"
+```
+
+## Assertion Types
+
+| Type | Example | Description |
+|------|---------|-------------|
+| `equals` | `equals: "UP"` | Exact match |
+| `contains` | `contains: "Ethernet"` | Substring match |
+| `matches` | `matches: "^(UP\|DOWN)$"` | Regex match |
+| `exists` | `exists: true` | Path exists |
+| `absent` | `absent: true` | Path does not exist |
+| `gt` | `gt: "100"` | Greater than (numeric) |
+| `lt` | `lt: "1000"` | Less than (numeric) |
+| `gte` | `gte: "0"` | Greater than or equal |
+| `lte` | `lte: "100"` | Less than or equal |
+
+## Short Paths
+
+OpenConfig paths can be verbose. netsert supports short paths that expand automatically:
+
+| Short Path | Expands To |
+|------------|------------|
+| `interface[Ethernet1]/...` | `/interfaces/interface[name=Ethernet1]/...` |
+| `bgp[default]/...` | `/network-instances/network-instance[name=default]/protocols/protocol[identifier=BGP][name=BGP]/bgp/...` |
+| `ospf[default]/...` | `/network-instances/network-instance[name=default]/protocols/protocol[identifier=OSPF][name=OSPF]/ospf/...` |
+| `system/...` | `/system/...` |
+| `lldp/...` | `/lldp/...` |
+
+Paths starting with `/` are treated as absolute OpenConfig paths.
+
+## Examples
+
+### Interface Status
+
+```yaml
+assertions:
+  - name: Ethernet1 admin enabled
+    path: interface[Ethernet1]/config/enabled
+    equals: "true"
+
+  - name: Ethernet1 operationally up
+    path: interface[Ethernet1]/state/oper-status
+    equals: "UP"
+
+  - name: Ethernet1 has IP
+    path: interface[Ethernet1]/subinterfaces/subinterface[index=0]/ipv4/addresses/address[ip=10.0.0.1]/config/ip
+    exists: true
+```
+
+### BGP State
+
+```yaml
+assertions:
+  - name: BGP peer 10.0.0.2 established
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/state/session-state
+    equals: "ESTABLISHED"
+
+  - name: BGP peer in correct AS
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/config/peer-as
+    equals: "65001"
+
+  - name: Received at least 10 prefixes
+    path: bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/state/messages/received/UPDATE
+    gte: "10"
+```
+
+### OSPF Neighbors
+
+```yaml
+assertions:
+  - name: OSPF neighbor exists
+    path: ospf[default]/areas/area[identifier=0.0.0.0]/interfaces/interface[id=Ethernet1]/neighbors/neighbor[router-id=10.255.0.2]/state/adjacency-state
+    equals: "FULL"
+```
+
+### System Checks
+
+```yaml
+assertions:
+  - name: Hostname set correctly
+    path: system/config/hostname
+    equals: "spine1"
+
+  - name: NTP server configured
+    path: system/ntp/servers/server[address=10.0.0.100]/config/address
+    exists: true
+```
+
+## Multiple Targets
+
+Test the same assertions across multiple devices:
+
+```yaml
+targets:
+  - host: spine1:6030
+  - host: spine2:6030
+assertions:
+  - name: Loopback0 exists
+    path: interface[Loopback0]/state/oper-status
+    equals: "UP"
+```
+
+## Credentials Per Target
+
+Override credentials for specific devices:
+
+```yaml
+targets:
+  - host: spine1:6030
+    username: admin
+    password: secret123
+  - host: spine2:6030
+    # uses default credentials
+assertions:
+  - name: Check something
+    path: system/config/hostname
+    exists: true
+```

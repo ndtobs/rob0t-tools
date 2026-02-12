@@ -1,0 +1,171 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Inventory
+description: Organize devices into groups with netsert inventory files
+section: netsert
+currentPage: inventory
+---
+
+# Inventory
+
+Inventory files let you organize devices into groups, set defaults, and run assertions at scale.
+
+## Basic Structure
+
+```yaml
+# inventory.yaml
+groups:
+  spine:
+    - spine1:6030
+    - spine2:6030
+  leaf:
+    - leaf1:6030
+    - leaf2:6030
+  all:
+    - "@spine"
+    - "@leaf"
+
+defaults:
+  username: admin
+  password: admin
+  insecure: true
+```
+
+## Usage
+
+Run against a specific group:
+
+```bash
+netsert run assertions.yaml -i inventory.yaml -g spine
+```
+
+Run against all devices:
+
+```bash
+netsert run assertions.yaml -i inventory.yaml -g all
+```
+
+Generate from a group:
+
+```bash
+netsert generate @spine -i inventory.yaml
+```
+
+## Group References
+
+Use `@groupname` to reference other groups:
+
+```yaml
+groups:
+  dc1-spine:
+    - dc1-spine1:6030
+    - dc1-spine2:6030
+  dc2-spine:
+    - dc2-spine1:6030
+    - dc2-spine2:6030
+  all-spines:
+    - "@dc1-spine"
+    - "@dc2-spine"
+```
+
+## Defaults
+
+Set connection defaults for all devices:
+
+```yaml
+defaults:
+  username: admin
+  password: admin
+  insecure: true
+  timeout: 30s
+```
+
+Available defaults:
+
+| Field | Description |
+|-------|-------------|
+| `username` | gNMI username |
+| `password` | gNMI password |
+| `insecure` | Skip TLS verification |
+| `timeout` | Connection timeout |
+
+## Per-Device Overrides
+
+Override defaults for specific devices in your assertion file:
+
+```yaml
+targets:
+  - host: spine1:6030
+    username: superadmin
+    password: different-password
+  - host: spine2:6030
+    # uses inventory defaults
+```
+
+## Concurrency
+
+Control parallel execution:
+
+```bash
+# 10 devices at once, 5 assertions per device
+netsert run -w 10 -p 5 assertions.yaml -i inventory.yaml
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-w, --workers` | 10 | Concurrent targets (devices) |
+| `-p, --parallel` | 5 | Concurrent assertions per target |
+
+## Example: Multi-DC Inventory
+
+```yaml
+# inventory.yaml
+groups:
+  # DC1
+  dc1-spine:
+    - 10.1.0.1:6030
+    - 10.1.0.2:6030
+  dc1-leaf:
+    - 10.1.1.1:6030
+    - 10.1.1.2:6030
+    - 10.1.1.3:6030
+    - 10.1.1.4:6030
+  dc1:
+    - "@dc1-spine"
+    - "@dc1-leaf"
+
+  # DC2
+  dc2-spine:
+    - 10.2.0.1:6030
+    - 10.2.0.2:6030
+  dc2-leaf:
+    - 10.2.1.1:6030
+    - 10.2.1.2:6030
+  dc2:
+    - "@dc2-spine"
+    - "@dc2-leaf"
+
+  # All
+  all-spines:
+    - "@dc1-spine"
+    - "@dc2-spine"
+  all-leafs:
+    - "@dc1-leaf"
+    - "@dc2-leaf"
+  all:
+    - "@dc1"
+    - "@dc2"
+
+defaults:
+  username: netops
+  password: ${NETWORK_PASSWORD}
+  insecure: false
+  timeout: 60s
+```
+
+Run by site:
+
+```bash
+netsert run spine-checks.yaml -i inventory.yaml -g dc1-spine
+netsert run leaf-checks.yaml -i inventory.yaml -g all-leafs
+```

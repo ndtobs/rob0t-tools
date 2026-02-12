@@ -1,0 +1,119 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: netmodel Overview
+description: Network data model generator - extract config to YAML via gNMI
+section: netmodel
+currentPage: index
+---
+
+# netmodel
+
+Network data model generator — extract OpenConfig-based YAML from live networks via gNMI.
+
+## What it does
+
+Connect to network devices via gNMI and export their configuration to a clean, vendor-agnostic YAML data model. This YAML becomes your source of truth for Infrastructure as Code (IaC) workflows.
+
+```
+Live Network → netmodel export → YAML Data Model → Ansible / IaC Tools
+```
+
+## Installation
+
+```bash
+go install github.com/ndtobs/netmodel/cmd/netmodel@latest
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/ndtobs/netmodel
+cd netmodel
+go build -o netmodel ./cmd/netmodel
+```
+
+## Quick Start
+
+Export configuration from a single device:
+
+```bash
+netmodel export 10.0.0.1:6030 -u admin -P password -k
+```
+
+Export specific features:
+
+```bash
+netmodel export 10.0.0.1:6030 --features interfaces,bgp -o spine1.yaml
+```
+
+Export from all devices in a group:
+
+```bash
+netmodel export @all -i inventory.yaml -o ./network-model/
+```
+
+Export with Ansible structure:
+
+```bash
+netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible
+```
+
+## Output Structure
+
+### Default (Flat)
+
+```
+network-model/
+├── spine1/
+│   ├── metadata.yaml
+│   ├── interfaces.yaml
+│   ├── bgp.yaml
+│   ├── ospf.yaml
+│   ├── system.yaml
+│   └── routing_policy.yaml
+└── leaf1/
+    └── ...
+```
+
+### Ansible Structure
+
+```
+network-model/
+├── group_vars/
+│   └── all.yaml          # common config (v0.2+)
+└── host_vars/
+    ├── spine1/
+    │   └── ...
+    └── leaf1/
+        └── ...
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `export` | Extract config from devices |
+| `features` | List available exporters |
+
+## CLI Reference
+
+```
+netmodel export <target> [flags]
+
+Flags:
+  -u, --username string    gNMI username
+  -P, --password string    gNMI password
+  -k, --insecure           skip TLS verification
+  -f, --features strings   features to export (default: all)
+  -o, --output string      output path (file or directory)
+  -i, --inventory string   inventory file for @group targets
+  -s, --structure string   output structure: flat, ansible (default: flat)
+      --no-split           single file per device (default: split per-feature)
+  -t, --timeout duration   gNMI timeout (default: 30s)
+```
+
+## Next Steps
+
+- [Exporters](/docs/netmodel/exporters/) — Available exporters and output format
+- [Inventory](/docs/netmodel/inventory/) — Organize devices into groups
+- [Ansible Integration](/docs/netmodel/ansible/) — Use with Ansible

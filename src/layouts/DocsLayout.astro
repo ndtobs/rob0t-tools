@@ -1,0 +1,42 @@
+---
+import Layout from "./Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import DocsSidebar from "../components/DocsSidebar.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  section?: "netsert" | "netmodel";
+  currentPage?: string;
+}
+
+const { title, description, section, currentPage } = Astro.props;
+---
+
+<Layout title={`${title} | rob0t.tools`} description={description}>
+  <Header />
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex gap-8">
+      <DocsSidebar section={section} currentPage={currentPage} />
+      <main id="main-content" class="flex-1 min-w-0">
+        <article class="prose prose-gray max-w-none prose-headings:scroll-mt-20 prose-code:before:content-none prose-code:after:content-none prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-900 prose-pre:text-gray-100">
+          <slot />
+        </article>
+      </main>
+    </div>
+  </div>
+  <Footer />
+</Layout>
+
+<style>
+  .prose pre {
+    overflow-x: auto;
+  }
+  .prose table {
+    font-size: 0.875rem;
+  }
+  .prose th {
+    background-color: rgb(249 250 251);
+  }
+</style>

@@ -1,0 +1,73 @@
+---
+interface Props {
+  section?: "netsert" | "netmodel";
+  currentPage?: string;
+}
+
+const { section, currentPage } = Astro.props;
+
+const netsertPages = [
+  { slug: "index", title: "Overview", href: "/docs/netsert/" },
+  { slug: "assertions", title: "Assertions", href: "/docs/netsert/assertions/" },
+  { slug: "generators", title: "Generators", href: "/docs/netsert/generators/" },
+  { slug: "inventory", title: "Inventory", href: "/docs/netsert/inventory/" },
+  { slug: "ci-cd", title: "CI/CD", href: "/docs/netsert/ci-cd/" },
+];
+
+const netmodelPages = [
+  { slug: "index", title: "Overview", href: "/docs/netmodel/" },
+  { slug: "exporters", title: "Exporters", href: "/docs/netmodel/exporters/" },
+  { slug: "inventory", title: "Inventory", href: "/docs/netmodel/inventory/" },
+  { slug: "ansible", title: "Ansible Integration", href: "/docs/netmodel/ansible/" },
+];
+
+const isActive = (slug: string, pageSection: string) => {
+  return section === pageSection && currentPage === slug;
+};
+---
+
+<aside class="w-64 flex-shrink-0 hidden lg:block">
+  <nav class="sticky top-24 space-y-8" aria-label="Documentation">
+    <div>
+      <h3 class="font-semibold text-gray-900 mb-3">netsert</h3>
+      <ul class="space-y-1">
+        {netsertPages.map((page) => (
+          <li>
+            <a
+              href={page.href}
+              class:list={[
+                "block px-3 py-1.5 rounded-md text-sm transition-colors",
+                isActive(page.slug, "netsert")
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+              ]}
+            >
+              {page.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-gray-900 mb-3">netmodel</h3>
+      <ul class="space-y-1">
+        {netmodelPages.map((page) => (
+          <li>
+            <a
+              href={page.href}
+              class:list={[
+                "block px-3 py-1.5 rounded-md text-sm transition-colors",
+                isActive(page.slug, "netmodel")
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+              ]}
+            >
+              {page.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </nav>
+</aside>

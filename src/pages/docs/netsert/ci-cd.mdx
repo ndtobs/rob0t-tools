@@ -1,0 +1,214 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: CI/CD Integration
+description: Integrate netsert into your CI/CD pipeline
+section: netsert
+currentPage: ci-cd
+---
+
+# CI/CD Integration
+
+netsert is built for automation. It exits with code 1 on failure and supports JSON output for parsing.
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | All assertions passed |
+| 1 | One or more assertions failed |
+| 2 | Error (connection failed, invalid config, etc.) |
+
+## GitHub Actions
+
+```yaml
+name: Network Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  validate:
+    runs-on: self-hosted  # Needs network access
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install netsert
+        run: go install github.com/ndtobs/netsert/cmd/netsert@latest
+
+      - name: Run assertions
+        env:
+          NETWORK_USER: ${{ secrets.NETWORK_USER }}
+          NETWORK_PASS: ${{ secrets.NETWORK_PASS }}
+        run: |
+          netsert run assertions.yaml \
+            -i inventory.yaml \
+            -u "$NETWORK_USER" \
+            -P "$NETWORK_PASS"
+
+      - name: Upload results
+        if: always()
+        run: |
+          netsert run assertions.yaml \
+            -i inventory.yaml \
+            -o json > results.json
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: netsert-results
+          path: results.json
+```
+
+## GitLab CI
+
+```yaml
+network-validation:
+  stage: test
+  image: golang:1.21
+  before_script:
+    - go install github.com/ndtobs/netsert/cmd/netsert@latest
+  script:
+    - netsert run assertions.yaml -i inventory.yaml -u "$NETWORK_USER" -P "$NETWORK_PASS"
+  artifacts:
+    when: always
+    paths:
+      - results.json
+    reports:
+      junit: results-junit.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+```
+
+## Jenkins
+
+```groovy
+pipeline {
+    agent any
+    
+    environment {
+        NETWORK_USER = credentials('network-username')
+        NETWORK_PASS = credentials('network-password')
+    }
+    
+    stages {
+        stage('Install') {
+            steps {
+                sh 'go install github.com/ndtobs/netsert/cmd/netsert@latest'
+            }
+        }
+        
+        stage('Validate Network') {
+            steps {
+                sh '''
+                    netsert run assertions.yaml \
+                        -i inventory.yaml \
+                        -u "$NETWORK_USER" \
+                        -P "$NETWORK_PASS" \
+                        -o json > results.json
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'results.json'
+                }
+            }
+        }
+    }
+}
+```
+
+## JSON Output
+
+Use `-o json` for machine-readable output:
+
+```bash
+netsert run assertions.yaml -o json > results.json
+```
+
+```json
+{
+  "summary": {
+    "total": 10,
+    "passed": 9,
+    "failed": 1,
+    "duration_ms": 234
+  },
+  "results": [
+    {
+      "name": "Ethernet1 is UP",
+      "target": "spine1:6030",
+      "path": "interface[Ethernet1]/state/oper-status",
+      "expected": "UP",
+      "actual": "UP",
+      "passed": true
+    },
+    {
+      "name": "BGP peer established",
+      "target": "spine1:6030",
+      "path": "bgp[default]/neighbors/neighbor[neighbor-address=10.0.0.2]/state/session-state",
+      "expected": "ESTABLISHED",
+      "actual": "IDLE",
+      "passed": false,
+      "error": "value mismatch: expected ESTABLISHED, got IDLE"
+    }
+  ]
+}
+```
+
+## Pre/Post Change Validation
+
+Use netsert for change windows:
+
+```bash
+#!/bin/bash
+set -e
+
+# Pre-change baseline
+echo "=== Pre-change validation ==="
+netsert run pre-change.yaml -i inventory.yaml
+netsert run assertions.yaml -i inventory.yaml -o json > pre-change-state.json
+
+# Apply changes (Ansible, Terraform, etc.)
+echo "=== Applying changes ==="
+ansible-playbook deploy.yaml
+
+# Post-change validation
+echo "=== Post-change validation ==="
+netsert run assertions.yaml -i inventory.yaml
+netsert run post-change.yaml -i inventory.yaml
+
+echo "=== Change successful ==="
+```
+
+## Scheduled Validation
+
+Run periodic checks to catch drift:
+
+```yaml
+# GitHub Actions - scheduled
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours
+
+# Or use cron directly
+# 0 */4 * * * /usr/local/bin/netsert run /etc/netsert/assertions.yaml -i /etc/netsert/inventory.yaml || notify-team
+```
+
+## Tips
+
+- **Self-hosted runners**: netsert needs network access to your devices
+- **Secrets**: Never commit credentials — use CI/CD secrets
+- **Timeouts**: Increase `--timeout` for slow/distant devices
+- **Parallelism**: Tune `-w` and `-p` based on your network size
+- **Artifacts**: Always save JSON results for debugging failures
