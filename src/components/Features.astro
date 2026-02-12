@@ -13,18 +13,22 @@ import { Icon } from "astro-icon/components";
         href="https://github.com/ndtobs/netsert"
         target="_blank"
         rel="noopener noreferrer"
-        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow h-full flex flex-col"
       >
         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
           <Icon name="tabler:checklist" class="w-6 h-6 text-gray-900" aria-hidden="true" />
         </div>
         <h3 class="text-2xl font-semibold text-gray-900 mb-3">netsert</h3>
-        <p class="text-gray-600 mb-4">
-          Declarative network state testing via gNMI. Write YAML assertions, validate your network. CI/CD ready with exit codes and JSON output.
+        <p class="text-gray-600 mb-4 flex-grow">
+          Declarative network testing. Write what you expect, let netsert tell you what's wrong. CI/CD native.
         </p>
-        <code class="text-sm bg-gray-100 px-3 py-2 rounded block overflow-x-auto">
-          go install github.com/ndtobs/netsert/cmd/netsert@latest
-        </code>
+        <pre class="text-xs bg-gray-900 text-green-400 px-4 py-3 rounded font-mono overflow-x-auto"><code>$ netsert run assertions.yaml
+✓ spine1: BGP neighbor 10.0.0.1 established
+✓ spine1: Loopback0 has IP 10.255.0.1/32
+✗ leaf1: Interface Ethernet1 is enabled
+  got: false, expected: true
+
+2 passed, 1 failed</code></pre>
       </a>
     </ScrollReveal>
     <ScrollReveal client:idle delay={0.3} scale={true}>
@@ -32,18 +36,25 @@ import { Icon } from "astro-icon/components";
         href="https://github.com/ndtobs/netmodel"
         target="_blank"
         rel="noopener noreferrer"
-        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow h-full flex flex-col"
       >
         <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
           <Icon name="tabler:file-export" class="w-6 h-6 text-gray-900" aria-hidden="true" />
         </div>
         <h3 class="text-2xl font-semibold text-gray-900 mb-3">netmodel</h3>
-        <p class="text-gray-600 mb-4">
-          Export network configuration to clean YAML for Ansible and IaC workflows. Supports interfaces, BGP, system, and routing-policy.
+        <p class="text-gray-600 mb-4 flex-grow">
+          Export live network config to clean YAML. Feed it straight to Ansible. No more screen-scraping.
         </p>
-        <code class="text-sm bg-gray-100 px-3 py-2 rounded block overflow-x-auto">
-          go install github.com/ndtobs/netmodel/cmd/netmodel@latest
-        </code>
+        <pre class="text-xs bg-gray-900 text-green-400 px-4 py-3 rounded font-mono overflow-x-auto"><code>$ netmodel export @spine -o ./host_vars/
+Exporting spine1...
+  → interfaces.yaml
+  → bgp.yaml
+  → system.yaml
+Exporting spine2...
+  → interfaces.yaml
+  → bgp.yaml
+  → system.yaml
+Done. 6 files written.</code></pre>
       </a>
     </ScrollReveal>
   </div>
