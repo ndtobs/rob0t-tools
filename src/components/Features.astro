@@ -1,0 +1,50 @@
+---
+import ScrollReveal from "./ScrollReveal.tsx";
+import { Icon } from "astro-icon/components";
+---
+
+<section id="tools" class="max-w-6xl mx-auto px-4 py-20">
+  <ScrollReveal client:idle delay={0.1}>
+    <h2 class="text-4xl font-bold text-gray-900 text-center mb-12">Tools</h2>
+  </ScrollReveal>
+  <div class="grid md:grid-cols-2 gap-8">
+    <ScrollReveal client:idle delay={0.2} scale={true}>
+      <a
+        href="https://github.com/ndtobs/netsert"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+      >
+        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+          <Icon name="tabler:checklist" class="w-6 h-6 text-gray-900" aria-hidden="true" />
+        </div>
+        <h3 class="text-2xl font-semibold text-gray-900 mb-3">netsert</h3>
+        <p class="text-gray-600 mb-4">
+          Declarative network state testing via gNMI. Write YAML assertions, validate your network. CI/CD ready with exit codes and JSON output.
+        </p>
+        <code class="text-sm bg-gray-100 px-3 py-2 rounded block overflow-x-auto">
+          go install github.com/ndtobs/netsert/cmd/netsert@latest
+        </code>
+      </a>
+    </ScrollReveal>
+    <ScrollReveal client:idle delay={0.3} scale={true}>
+      <a
+        href="https://github.com/ndtobs/netmodel"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow"
+      >
+        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
+          <Icon name="tabler:file-export" class="w-6 h-6 text-gray-900" aria-hidden="true" />
+        </div>
+        <h3 class="text-2xl font-semibold text-gray-900 mb-3">netmodel</h3>
+        <p class="text-gray-600 mb-4">
+          Export network configuration to clean YAML for Ansible and IaC workflows. Supports interfaces, BGP, system, and routing-policy.
+        </p>
+        <code class="text-sm bg-gray-100 px-3 py-2 rounded block overflow-x-auto">
+          go install github.com/ndtobs/netmodel/cmd/netmodel@latest
+        </code>
+      </a>
+    </ScrollReveal>
+  </div>
+</section>

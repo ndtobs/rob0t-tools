@@ -1,0 +1,30 @@
+---
+import { Icon } from "astro-icon/components";
+---
+
+<header
+  class="w-full py-4 px-4 border-b border-gray-200 bg-white sticky top-0 z-50"
+  role="banner"
+>
+  <nav
+    class="max-w-6xl mx-auto flex items-center justify-between"
+    aria-label="Main navigation"
+  >
+    <a
+      href="/"
+      class="text-2xl font-bold text-gray-900 hover:text-gray-700 transition-colors"
+    >
+      rob0t.tools
+    </a>
+    
+    <a
+      href="https://github.com/ndtobs"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+    >
+      <Icon name="tabler:brand-github" class="w-6 h-6" aria-hidden="true" />
+      <span class="hidden sm:inline">GitHub</span>
+    </a>
+  </nav>
+</header>
