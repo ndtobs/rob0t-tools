@@ -92,7 +92,6 @@ bgp:
         local_address: Loopback0
       afi_safi:
         - name: IPV4_UNICAST
-          enabled: true
 
     # EVPN overlay (L2VPN EVPN)
     SPINE-EVPN:
@@ -101,7 +100,6 @@ bgp:
         local_address: Loopback0
       afi_safi:
         - name: L2VPN_EVPN
-          enabled: true
 
   neighbors:
     # Underlay peer
