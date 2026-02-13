@@ -1,0 +1,163 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: Deduplication
+description: Extract common config to group_vars automatically
+section: netmodel
+currentPage: dedup
+---
+
+# Deduplication
+
+The `--dedup` flag extracts common configuration into `group_vars/`, reducing repetition and following Ansible best practices.
+
+## Usage
+
+```bash
+netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible --dedup
+```
+
+## How It Works
+
+netmodel compares all exported configs and extracts:
+
+- **`group_vars/all.yaml`** — Config identical across ALL devices
+- **`group_vars/<group>.yaml`** — Config identical within inventory groups
+- **`host_vars/<device>/`** — Device-specific config only
+
+## Before vs After
+
+**Without `--dedup`:** Everything duplicated in each host
+
+```
+host_vars/
+├── leaf1/
+│   ├── bgp.yaml         # peer_groups, neighbors, global
+│   ├── system.yaml      # hostname, NTP, DNS, AAA
+│   └── routing_policy.yaml
+├── leaf2/
+│   ├── bgp.yaml         # same peer_groups duplicated!
+│   ├── system.yaml      # same NTP/DNS/AAA duplicated!
+│   └── routing_policy.yaml
+```
+
+**With `--dedup`:** Common config extracted, DRY principle applied
+
+```
+group_vars/
+├── all.yaml             # NTP, DNS, AAA (common to ALL devices)
+├── spine.yaml           # Spine-only peer groups, policies
+└── leaf.yaml            # Leaf-only peer groups, policies
+host_vars/
+├── leaf1/
+│   ├── bgp.yaml         # Just: router_id, neighbors
+│   └── interfaces.yaml
+├── leaf2/
+│   └── ...              # Much smaller!
+```
+
+## What Gets Deduplicated
+
+Config is compared at the "natural config object" level:
+
+| Feature | Deduped Objects |
+|---------|-----------------|
+| `system` | NTP config, DNS config, AAA/users, syslog servers |
+| `bgp` | Peer groups (by name) |
+| `routing_policy` | Entire policy set |
+
+### Stays in host_vars
+
+These are inherently device-specific and always stay in `host_vars/`:
+
+- **Interfaces** — different names, IPs per device
+- **BGP neighbors** — different peer IPs
+- **BGP global** — router_id differs
+- **OSPF areas** — area assignments vary
+
+## Example Output
+
+**group_vars/leaf.yaml** — extracted automatically:
+
+```yaml
+bgp:
+  peer_groups:
+    SPINE:
+      peer_as: 65000
+      afi_safi:
+        - name: IPV4_UNICAST
+    SPINE-EVPN:
+      peer_as: 65000
+      update_source: Loopback0
+      ebgp_multihop: 3
+      afi_safi:
+        - name: L2VPN_EVPN
+routing_policy:
+  defined_sets:
+    prefix_sets:
+      - name: LOOPBACKS
+        prefixes:
+          - prefix: 10.255.0.0/16
+            mask_range: 16..32
+system:
+  aaa:
+    users:
+      - username: admin
+        role: network-admin
+```
+
+**host_vars/leaf1/bgp.yaml** — only device-specific:
+
+```yaml
+bgp:
+  global:
+    as: 65001
+    router_id: 10.255.1.1
+  neighbors:
+    10.0.0.0:
+      peer_group: SPINE
+    10.0.0.4:
+      peer_group: SPINE
+    10.255.0.1:
+      peer_group: SPINE-EVPN
+    10.255.0.2:
+      peer_group: SPINE-EVPN
+```
+
+Note: `afi_safi` isn't repeated on neighbors — it's inherited from the peer group.
+
+## Inventory Groups
+
+Dedup uses your inventory groups to extract group-level common config:
+
+```yaml
+# inventory.yaml
+groups:
+  spine:
+    - spine1
+    - spine2
+  leaf:
+    - leaf1
+    - leaf2
+```
+
+Config common to all spines → `group_vars/spine.yaml`  
+Config common to all leaves → `group_vars/leaf.yaml`  
+Config common to everyone → `group_vars/all.yaml`
+
+## Try It
+
+```bash
+# Clone the test lab
+git clone https://github.com/ndtobs/network-labs.git
+cd network-labs/evpn-spine-leaf
+sudo clab deploy -t topology.yaml
+
+# Wait ~90s, then export both ways
+netmodel export @all -i inventory.yaml -o /tmp/no-dedup --structure ansible
+netmodel export @all -i inventory.yaml -o /tmp/with-dedup --structure ansible --dedup
+
+# Compare
+tree /tmp/no-dedup /tmp/with-dedup
+diff /tmp/no-dedup/host_vars/leaf1/bgp.yaml /tmp/with-dedup/host_vars/leaf1/bgp.yaml
+cat /tmp/with-dedup/group_vars/leaf.yaml
+```

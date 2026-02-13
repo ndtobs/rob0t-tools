@@ -58,6 +58,12 @@ Export with Ansible structure:
 netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible
 ```
 
+Export with deduplication (extracts common config to `group_vars/`):
+
+```bash
+netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible --dedup
+```
+
 ## Output Structure
 
 ### Default (Flat)
@@ -108,6 +114,7 @@ Flags:
   -o, --output string      output path (file or directory)
   -i, --inventory string   inventory file for @group targets
   -s, --structure string   output structure: flat, ansible (default: flat)
+      --dedup              extract common config to group_vars (requires ansible structure)
       --no-split           single file per device (default: split per-feature)
   -t, --timeout duration   gNMI timeout (default: 30s)
 ```
@@ -117,3 +124,4 @@ Flags:
 - [Exporters](/docs/netmodel/exporters/) — Available exporters and output format
 - [Inventory](/docs/netmodel/inventory/) — Organize devices into groups
 - [Ansible Integration](/docs/netmodel/ansible/) — Use with Ansible
+- [Deduplication](/docs/netmodel/dedup/) — Extract common config to group_vars

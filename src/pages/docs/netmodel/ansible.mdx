@@ -16,12 +16,16 @@ netmodel's `--structure ansible` option outputs directly to Ansible's expected d
 netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible
 ```
 
+Add `--dedup` to extract common config to `group_vars/` automatically. See [Deduplication](/docs/netmodel/dedup/) for details.
+
 Output:
 
 ```
 network-model/
 ├── group_vars/
-│   └── all.yaml          # Common config (v0.2+)
+│   ├── all.yaml          # Common to all devices (with --dedup)
+│   ├── spine.yaml        # Spine group common (with --dedup)
+│   └── leaf.yaml         # Leaf group common (with --dedup)
 └── host_vars/
     ├── spine1/
     │   ├── metadata.yaml
@@ -122,6 +126,6 @@ network-automation/
 ## Tips
 
 - Keep netmodel's `metadata.yaml` for tracking when configs were exported
-- Use `group_vars/all.yaml` for shared config (coming in v0.2)
+- Use `--dedup` to extract shared config to `group_vars/` automatically
 - Run netmodel periodically to detect drift
 - Pair with netsert for validation after Ansible runs
