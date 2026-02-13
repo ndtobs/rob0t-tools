@@ -7,54 +7,67 @@ import { Icon } from "astro-icon/components";
   <ScrollReveal client:idle delay={0.1}>
     <h2 class="text-4xl font-bold text-gray-900 text-center mb-12">Tools</h2>
   </ScrollReveal>
-  <div class="grid md:grid-cols-2 gap-8">
+  <div class="grid md:grid-cols-3 gap-6">
+    <!-- netmodel -->
     <ScrollReveal client:idle delay={0.2} scale={true}>
       <a
-        href="https://github.com/ndtobs/netsert"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow h-full flex flex-col"
+        href="/docs/netmodel/"
+        class="block p-6 bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:border-blue-300 transition-all h-full flex flex-col"
       >
-        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-          <Icon name="tabler:checklist" class="w-6 h-6 text-gray-900" aria-hidden="true" />
+        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+          <Icon name="tabler:file-export" class="w-6 h-6 text-blue-600" aria-hidden="true" />
         </div>
-        <h3 class="text-2xl font-semibold text-gray-900 mb-3">netsert</h3>
-        <p class="text-gray-600 mb-4 flex-grow">
-          Define what your network should look like. netsert tells you when it doesn't.
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">netmodel</h3>
+        <p class="text-gray-600 mb-4 flex-grow text-sm">
+          Extract config from live networks to YAML. Your source of truth starts here.
         </p>
-        <pre class="text-xs bg-black text-white px-4 py-3 rounded font-mono overflow-x-auto h-36"><code>$ netsert run assertions.yaml
-✓ spine1: BGP neighbor 10.0.0.1 established
-✓ spine1: Loopback0 has IP 10.255.0.1/32
-✗ leaf1: Interface Ethernet1 is enabled
-  got: false, expected: true
-
-2 passed, 1 failed</code></pre>
+        <pre class="text-xs bg-black text-white px-3 py-2 rounded font-mono overflow-x-auto"><code>$ netmodel export @all -i inv.yaml
+Exporting spine1... Done
+Exporting leaf1...  Done
+Wrote group_vars/all.yaml
+Wrote host_vars/spine1/</code></pre>
       </a>
     </ScrollReveal>
+
+    <!-- netpush -->
     <ScrollReveal client:idle delay={0.3} scale={true}>
       <a
-        href="https://github.com/ndtobs/netmodel"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="block p-8 bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow h-full flex flex-col"
+        href="/docs/netpush/"
+        class="block p-6 bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:border-green-300 transition-all h-full flex flex-col"
       >
-        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-          <Icon name="tabler:file-export" class="w-6 h-6 text-gray-900" aria-hidden="true" />
+        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+          <Icon name="tabler:upload" class="w-6 h-6 text-green-600" aria-hidden="true" />
         </div>
-        <h3 class="text-2xl font-semibold text-gray-900 mb-3">netmodel</h3>
-        <p class="text-gray-600 mb-4 flex-grow">
-          Turn live network config into a data model. Automatically.
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">netpush</h3>
+        <p class="text-gray-600 mb-4 flex-grow text-sm">
+          Push YAML config to devices via gNMI. Diff first, apply safely.
         </p>
-        <pre class="text-xs bg-black text-white px-4 py-3 rounded font-mono overflow-x-auto h-36"><code>$ netmodel export @spine -o ./host_vars/
-Exporting spine1...
-  → interfaces.yaml
-  → bgp.yaml
-  → system.yaml
-Exporting spine2...
-  → interfaces.yaml
-  → bgp.yaml
-  → system.yaml
-Done. 6 files written.</code></pre>
+        <pre class="text-xs bg-black text-white px-3 py-2 rounded font-mono overflow-x-auto"><code>$ netpush diff ./ -i inv.yaml
+=== spine1 ===
+✓ Already in sync
+=== leaf1 ===
++ interface Loopback99 (new)</code></pre>
+      </a>
+    </ScrollReveal>
+
+    <!-- netsert -->
+    <ScrollReveal client:idle delay={0.4} scale={true}>
+      <a
+        href="/docs/netsert/"
+        class="block p-6 bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:border-purple-300 transition-all h-full flex flex-col"
+      >
+        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+          <Icon name="tabler:checklist" class="w-6 h-6 text-purple-600" aria-hidden="true" />
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">netsert</h3>
+        <p class="text-gray-600 mb-4 flex-grow text-sm">
+          Validate network state with assertions. CI/CD ready.
+        </p>
+        <pre class="text-xs bg-black text-white px-3 py-2 rounded font-mono overflow-x-auto"><code>$ netsert run tests.yaml -i inv.yaml
+✓ spine1: BGP established
+✓ leaf1: Loopback0 exists
+✗ leaf1: Eth1 enabled
+2 passed, 1 failed</code></pre>
       </a>
     </ScrollReveal>
   </div>

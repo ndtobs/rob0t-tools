@@ -1,10 +1,22 @@
 ---
 interface Props {
-  section?: "netsert" | "netmodel";
+  section?: "netsert" | "netmodel" | "netpush";
   currentPage?: string;
 }
 
 const { section, currentPage } = Astro.props;
+
+const netmodelPages = [
+  { slug: "index", title: "Overview", href: "/docs/netmodel/" },
+  { slug: "exporters", title: "Exporters", href: "/docs/netmodel/exporters/" },
+  { slug: "inventory", title: "Inventory", href: "/docs/netmodel/inventory/" },
+  { slug: "dedup", title: "Deduplication", href: "/docs/netmodel/dedup/" },
+  { slug: "ansible", title: "Ansible Integration", href: "/docs/netmodel/ansible/" },
+];
+
+const netpushPages = [
+  { slug: "index", title: "Overview", href: "/docs/netpush/" },
+];
 
 const netsertPages = [
   { slug: "index", title: "Overview", href: "/docs/netsert/" },
@@ -12,13 +24,6 @@ const netsertPages = [
   { slug: "generators", title: "Generators", href: "/docs/netsert/generators/" },
   { slug: "inventory", title: "Inventory", href: "/docs/netsert/inventory/" },
   { slug: "ci-cd", title: "CI/CD", href: "/docs/netsert/ci-cd/" },
-];
-
-const netmodelPages = [
-  { slug: "index", title: "Overview", href: "/docs/netmodel/" },
-  { slug: "exporters", title: "Exporters", href: "/docs/netmodel/exporters/" },
-  { slug: "inventory", title: "Inventory", href: "/docs/netmodel/inventory/" },
-  { slug: "ansible", title: "Ansible Integration", href: "/docs/netmodel/ansible/" },
 ];
 
 const isActive = (slug: string, pageSection: string) => {
@@ -29,17 +34,17 @@ const isActive = (slug: string, pageSection: string) => {
 <aside class="w-64 flex-shrink-0 hidden lg:block">
   <nav class="sticky top-24 space-y-8" aria-label="Documentation">
     <div>
-      <h3 class="font-semibold text-gray-900 mb-3">netsert</h3>
+      <h3 class="font-semibold text-blue-700 mb-3">netmodel</h3>
       <ul class="space-y-1">
-        {netsertPages.map((page) => (
+        {netmodelPages.map((page) => (
           <li>
             <a
               href={page.href}
               class:list={[
                 "block px-3 py-1.5 rounded-md text-sm transition-colors",
-                isActive(page.slug, "netsert")
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                isActive(page.slug, "netmodel")
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-600 hover:bg-blue-50 hover:text-blue-700",
               ]}
             >
               {page.title}
@@ -50,17 +55,38 @@ const isActive = (slug: string, pageSection: string) => {
     </div>
 
     <div>
-      <h3 class="font-semibold text-gray-900 mb-3">netmodel</h3>
+      <h3 class="font-semibold text-green-700 mb-3">netpush</h3>
       <ul class="space-y-1">
-        {netmodelPages.map((page) => (
+        {netpushPages.map((page) => (
           <li>
             <a
               href={page.href}
               class:list={[
                 "block px-3 py-1.5 rounded-md text-sm transition-colors",
-                isActive(page.slug, "netmodel")
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                isActive(page.slug, "netpush")
+                  ? "bg-green-600 text-white"
+                  : "text-gray-600 hover:bg-green-50 hover:text-green-700",
+              ]}
+            >
+              {page.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-purple-700 mb-3">netsert</h3>
+      <ul class="space-y-1">
+        {netsertPages.map((page) => (
+          <li>
+            <a
+              href={page.href}
+              class:list={[
+                "block px-3 py-1.5 rounded-md text-sm transition-colors",
+                isActive(page.slug, "netsert")
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-600 hover:bg-purple-50 hover:text-purple-700",
               ]}
             >
               {page.title}

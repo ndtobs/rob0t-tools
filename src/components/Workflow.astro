@@ -1,0 +1,124 @@
+---
+import ScrollReveal from "./ScrollReveal.tsx";
+import { Icon } from "astro-icon/components";
+---
+
+<section class="max-w-4xl mx-auto px-4 py-16">
+  <ScrollReveal client:idle delay={0.1}>
+    <h2 class="text-3xl font-bold text-gray-900 text-center mb-8">How it works</h2>
+  </ScrollReveal>
+  
+  <ScrollReveal client:idle delay={0.2}>
+    <div class="bg-gray-50 rounded-xl p-8 border border-gray-200">
+      <!-- Workflow Diagram -->
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-2">
+        
+        <!-- Network Device -->
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-white rounded-lg border border-gray-300 flex items-center justify-center mb-2 shadow-sm">
+            <Icon name="tabler:router" class="w-8 h-8 text-gray-700" aria-hidden="true" />
+          </div>
+          <span class="text-sm font-medium text-gray-700">Network</span>
+        </div>
+
+        <!-- Arrow: GET -->
+        <div class="flex flex-col items-center">
+          <div class="hidden md:block w-16 h-0.5 bg-gray-300 relative">
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-l-8 border-l-gray-400 border-y-4 border-y-transparent"></div>
+          </div>
+          <div class="md:hidden h-8 w-0.5 bg-gray-300 relative">
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-t-8 border-t-gray-400 border-x-4 border-x-transparent"></div>
+          </div>
+          <span class="text-xs text-gray-500 mt-1">gNMI GET</span>
+        </div>
+
+        <!-- netmodel -->
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-blue-100 rounded-lg border border-blue-300 flex items-center justify-center mb-2 shadow-sm">
+            <Icon name="tabler:file-export" class="w-8 h-8 text-blue-600" aria-hidden="true" />
+          </div>
+          <span class="text-sm font-medium text-blue-700">netmodel</span>
+        </div>
+
+        <!-- Arrow: YAML -->
+        <div class="flex flex-col items-center">
+          <div class="hidden md:block w-16 h-0.5 bg-gray-300 relative">
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-l-8 border-l-gray-400 border-y-4 border-y-transparent"></div>
+          </div>
+          <div class="md:hidden h-8 w-0.5 bg-gray-300 relative">
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-t-8 border-t-gray-400 border-x-4 border-x-transparent"></div>
+          </div>
+          <span class="text-xs text-gray-500 mt-1">YAML</span>
+        </div>
+
+        <!-- YAML Data Model -->
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-amber-100 rounded-lg border border-amber-300 flex items-center justify-center mb-2 shadow-sm">
+            <Icon name="tabler:file-code" class="w-8 h-8 text-amber-600" aria-hidden="true" />
+          </div>
+          <span class="text-sm font-medium text-amber-700">Data Model</span>
+        </div>
+
+        <!-- Arrow: YAML -->
+        <div class="flex flex-col items-center">
+          <div class="hidden md:block w-16 h-0.5 bg-gray-300 relative">
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-l-8 border-l-gray-400 border-y-4 border-y-transparent"></div>
+          </div>
+          <div class="md:hidden h-8 w-0.5 bg-gray-300 relative">
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-t-8 border-t-gray-400 border-x-4 border-x-transparent"></div>
+          </div>
+          <span class="text-xs text-gray-500 mt-1">YAML</span>
+        </div>
+
+        <!-- netpush -->
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-lg border border-green-300 flex items-center justify-center mb-2 shadow-sm">
+            <Icon name="tabler:upload" class="w-8 h-8 text-green-600" aria-hidden="true" />
+          </div>
+          <span class="text-sm font-medium text-green-700">netpush</span>
+        </div>
+
+        <!-- Arrow: SET -->
+        <div class="flex flex-col items-center">
+          <div class="hidden md:block w-16 h-0.5 bg-gray-300 relative">
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-l-8 border-l-gray-400 border-y-4 border-y-transparent"></div>
+          </div>
+          <div class="md:hidden h-8 w-0.5 bg-gray-300 relative">
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0 border-t-8 border-t-gray-400 border-x-4 border-x-transparent"></div>
+          </div>
+          <span class="text-xs text-gray-500 mt-1">gNMI SET</span>
+        </div>
+
+        <!-- Network Device -->
+        <div class="flex flex-col items-center text-center">
+          <div class="w-16 h-16 bg-white rounded-lg border border-gray-300 flex items-center justify-center mb-2 shadow-sm">
+            <Icon name="tabler:router" class="w-8 h-8 text-gray-700" aria-hidden="true" />
+          </div>
+          <span class="text-sm font-medium text-gray-700">Network</span>
+        </div>
+      </div>
+
+      <!-- netsert validation arrow -->
+      <div class="flex justify-center mt-6">
+        <div class="flex flex-col items-center">
+          <div class="h-8 w-0.5 bg-gray-300 relative">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-b-8 border-b-gray-400 border-x-4 border-x-transparent"></div>
+          </div>
+          <div class="w-16 h-16 bg-purple-100 rounded-lg border border-purple-300 flex items-center justify-center mb-2 shadow-sm">
+            <Icon name="tabler:checklist" class="w-8 h-8 text-purple-600" aria-hidden="true" />
+          </div>
+          <span class="text-sm font-medium text-purple-700">netsert</span>
+          <span class="text-xs text-gray-500">validate</span>
+        </div>
+      </div>
+
+      <!-- Summary text -->
+      <p class="text-center text-gray-600 mt-6 text-sm">
+        <strong>netmodel</strong> extracts config →
+        <strong>YAML</strong> is your source of truth →
+        <strong>netpush</strong> deploys changes →
+        <strong>netsert</strong> validates state
+      </p>
+    </div>
+  </ScrollReveal>
+</section>

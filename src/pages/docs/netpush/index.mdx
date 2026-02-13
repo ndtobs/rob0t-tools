@@ -1,0 +1,191 @@
+---
+layout: ../../../layouts/DocsLayout.astro
+title: netpush Overview
+description: Push network config via gNMI from YAML
+section: netpush
+currentPage: index
+---
+
+# netpush
+
+Push network config via gNMI from YAML — OpenConfig-native config deployment.
+
+## What it does
+
+Takes the YAML data model (from netmodel or hand-written) and pushes it to network devices via gNMI SET. Diff before apply, merge safely, delete surgically.
+
+```
+YAML Data Model → netpush apply → gNMI SET → Live Network
+```
+
+## Installation
+
+```bash
+go install github.com/ndtobs/netpush/cmd/netpush@latest
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/ndtobs/netpush
+cd netpush
+go build -o netpush ./cmd/netpush
+```
+
+## Quick Start
+
+Preview what would change:
+
+```bash
+netpush diff ./ -i inventory.yaml
+```
+
+Apply config to all devices:
+
+```bash
+netpush apply ./ -i inventory.yaml
+```
+
+Delete a specific path:
+
+```bash
+netpush delete -p "interface[Loopback99]" -i inventory.yaml
+```
+
+## Commands
+
+| Command | gNMI Op | Description |
+|---------|---------|-------------|
+| `diff` | GET | Compare YAML to device, show what would change |
+| `apply` | SET Update | Merge config (additive, safe) |
+| `delete -p` | SET Delete | Remove specific paths |
+
+### diff
+
+Compare your YAML model against live devices:
+
+```bash
+$ netpush diff ./ -i inventory.yaml
+
+=== spine1 ===
+✓ Already in sync
+
+=== leaf1 ===
++ interface Loopback99 (new)
+~ interface Ethernet1:
+    description: "old" → "new"
+- interface Vlan999 (not in model)
+```
+
+**Output symbols:**
+- `+` = would be added (in model, not on device)
+- `~` = would be changed (different values)  
+- `-` = not in model (on device only, informational)
+- `✓` = already in sync
+
+### apply
+
+Merge config via gNMI Update. Additive only — never removes config:
+
+```bash
+# Preview first (same as diff)
+netpush apply ./ -i inventory.yaml --dry-run
+
+# Apply
+netpush apply ./ -i inventory.yaml
+```
+
+### delete
+
+Surgically remove specific paths:
+
+```bash
+# Delete an interface
+netpush delete -p "interface[Loopback99]" -t leaf1:6030 -u admin -P admin -k
+
+# Delete multiple paths
+netpush delete -p "interface[Vlan10]" -p "interface[Vlan20]" -i inventory.yaml
+
+# Short path syntax
+netpush delete -p "bgp[default]/neighbors/neighbor[10.0.0.5]" ...
+```
+
+## Directory Structure
+
+Works with Ansible-style layout from `netmodel --structure ansible --dedup`:
+
+```
+model/
+├── group_vars/
+│   ├── all.yaml        # Common config (NTP, AAA, policies)
+│   ├── spine.yaml      # Spine-specific (peer-groups)
+│   └── leaf.yaml       # Leaf-specific (EVPN peer-groups)
+├── host_vars/
+│   ├── spine1/
+│   │   ├── interfaces.yaml
+│   │   └── bgp.yaml
+│   └── leaf1/
+│       ├── interfaces.yaml
+│       └── bgp.yaml
+└── inventory.yaml
+```
+
+netpush deep-merges configs in order:
+1. `group_vars/all.yaml` (base)
+2. `group_vars/<group>.yaml` (group overrides)
+3. `host_vars/<host>/` (host-specific)
+
+## CLI Reference
+
+```
+netpush diff <path> [flags]
+netpush apply <path> [flags]
+netpush delete [flags]
+
+Flags:
+  -t, --target string      target device (host:port)
+  -i, --inventory string   inventory file
+  -g, --group string       target group from inventory
+  -u, --username string    gNMI username
+  -P, --password string    gNMI password
+  -k, --insecure           skip TLS verification
+      --timeout duration   operation timeout (default: 30s)
+      --dry-run            preview changes without applying
+
+Delete-specific:
+  -p, --path string        path to delete (repeatable)
+```
+
+## Try It
+
+Use the [network-labs](https://github.com/ndtobs/network-labs) EVPN topology:
+
+```bash
+git clone https://github.com/ndtobs/network-labs.git
+cd network-labs/evpn-spine-leaf
+sudo clab deploy -t topology.yaml
+
+# Export current config
+netmodel export @all -i inventory.yaml -o ./model/ --structure ansible --dedup
+
+# Make a change
+echo "interfaces:
+  Loopback99:
+    description: test
+    type: softwareLoopback" >> model/host_vars/leaf1/interfaces.yaml
+
+# Preview
+netpush diff ./model/ -i inventory.yaml
+
+# Apply
+netpush apply ./model/ -i inventory.yaml
+
+# Verify
+netsert run assertions.yaml -i inventory.yaml
+```
+
+## Next Steps
+
+- [Diff](/docs/netpush/diff/) — Understanding diff output
+- [Apply](/docs/netpush/apply/) — Safe config deployment
+- [Delete](/docs/netpush/delete/) — Surgical config removal
