@@ -34,72 +34,64 @@ go build -o netmodel ./cmd/netmodel
 
 ## Quick Start
 
-Export configuration from a single device:
-
-```bash
-netmodel export 10.0.0.1:6030 -u admin -P password -k
-```
-
-Export specific features:
-
-```bash
-netmodel export 10.0.0.1:6030 --features interfaces,bgp -o spine1.yaml
-```
-
-Export from all devices in a group:
-
-```bash
-netmodel export @all -i inventory.yaml -o ./network-model/
-```
-
-Export with Ansible structure:
-
-```bash
-netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible
-```
-
-Export with deduplication (extracts common config to `group_vars/`):
+Export from all devices with Ansible structure and deduplication:
 
 ```bash
 netmodel export @all -i inventory.yaml -o ./network-model/ --structure ansible --dedup
 ```
 
-## Output Structure
-
-### Default (Flat)
-
-```
-network-model/
-├── spine1/
-│   ├── metadata.yaml
-│   ├── interfaces.yaml
-│   ├── bgp.yaml
-│   ├── ospf.yaml
-│   ├── system.yaml
-│   └── routing_policy.yaml
-└── leaf1/
-    └── ...
-```
-
-### Ansible Structure
+Output:
 
 ```
 network-model/
 ├── group_vars/
-│   └── all.yaml          # common config (v0.2+)
+│   ├── all.yaml          # Config common to ALL devices
+│   ├── spine.yaml        # Config common to spines
+│   └── leaf.yaml         # Config common to leaves
 └── host_vars/
     ├── spine1/
-    │   └── ...
+    │   ├── bgp.yaml      # Device-specific only
+    │   └── interfaces.yaml
     └── leaf1/
         └── ...
 ```
 
-## Commands
+Export from a single device:
 
-| Command | Description |
+```bash
+netmodel export 10.0.0.1:6030 -u admin -P password -k -o spine1/
+```
+
+## Deduplication
+
+The `--dedup` flag analyzes all exported configs and extracts common configuration:
+
+| Output | Contains |
+|--------|----------|
+| `group_vars/all.yaml` | Config identical across ALL devices (NTP, DNS, AAA) |
+| `group_vars/<group>.yaml` | Config identical within groups (peer groups, policies) |
+| `host_vars/<device>/` | Device-specific only (router-id, neighbors, interfaces) |
+
+**Before dedup:** Same peer groups, NTP servers, and policies duplicated in every host file.
+
+**After dedup:** Common config in `group_vars/`, host files contain only what's unique.
+
+This follows Ansible best practices — change NTP servers once in `group_vars/all.yaml`, not in 50 host files.
+
+→ [Full dedup documentation](/docs/netmodel/dedup/)
+
+## Exporters
+
+| Feature | Description |
 |---------|-------------|
-| `export` | Extract config from devices |
-| `features` | List available exporters |
+| `interfaces` | IPs, descriptions, MTU, ethernet, LAG |
+| `bgp` | Global config, peer groups, neighbors, AFI/SAFI |
+| `ospf` | Areas, interfaces, timers |
+| `system` | Hostname, NTP, DNS, AAA/users, syslog |
+| `routing_policy` | Prefix-sets, community-sets, policies |
+| `evpn` | VTEP, VLAN-VNI, VRF-VNI mappings |
+
+→ [Exporter details](/docs/netmodel/exporters/)
 
 ## CLI Reference
 
@@ -114,14 +106,31 @@ Flags:
   -o, --output string      output path (file or directory)
   -i, --inventory string   inventory file for @group targets
   -s, --structure string   output structure: flat, ansible (default: flat)
-      --dedup              extract common config to group_vars (requires ansible structure)
+      --dedup              extract common config to group_vars (requires --structure ansible)
       --no-split           single file per device (default: split per-feature)
   -t, --timeout duration   gNMI timeout (default: 30s)
 ```
 
+## Try It
+
+Use the [network-labs](https://github.com/ndtobs/network-labs) EVPN topology:
+
+```bash
+git clone https://github.com/ndtobs/network-labs.git
+cd network-labs/evpn-spine-leaf
+sudo clab deploy -t topology.yaml
+
+# Wait ~90s, then export
+netmodel export @all -i inventory.yaml -o ./model/ --structure ansible --dedup
+
+# See the results
+tree ./model/
+cat ./model/group_vars/leaf.yaml
+```
+
 ## Next Steps
 
+- [Deduplication](/docs/netmodel/dedup/) — Extract common config to group_vars
 - [Exporters](/docs/netmodel/exporters/) — Available exporters and output format
 - [Inventory](/docs/netmodel/inventory/) — Organize devices into groups
 - [Ansible Integration](/docs/netmodel/ansible/) — Use with Ansible
-- [Deduplication](/docs/netmodel/dedup/) — Extract common config to group_vars
